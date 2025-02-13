@@ -3,37 +3,13 @@ import icalendar
 from datetime import datetime, time, timedelta
 from functools import cmp_to_key
 
-from utils.utils import get_search_json, get_calendar
+from utils.utils import get_search_json, get_calendar, get_lessons_sequence
 from utils.lesson import Lesson
 from utils.schedules_issue import SchedulesIssue
 
-async def get_lessons_sequence(cal: icalendar.Calendar) -> list[Lesson]:
-    # search_res = await get_search_json("ИКБО-70-24")
-    # cal = await get_calendar(search_res)
 
-    lessons_sequence = []
-    for event in cal.walk("VEVENT"):
-        # проверка на то, является ли event занятием
-        if not event.get("RRULE"): continue
 
-        lessons_sequence.append(Lesson(
-            event.get("SUMMARY"),
-            event.get("LOCATION"),
-            event.get("DTSTART").dt,
-            event.get("DTEND").dt
-        ))
-
-    def compare(lesson1: Lesson, lesson2: Lesson):
-        # res = int((lesson1.start_time - lesson2.start_time).total_seconds())
-        # print("***", res)
-        # print(lesson1.name, lesson1.start_time)
-        # print(lesson2.name, lesson2.start_time)
-        return int((lesson1.start_time - lesson2.start_time).total_seconds())
-
-    lessons_sequence.sort(key=cmp_to_key(compare))
-    return lessons_sequence
-
-def get_window_issues(lessons_sequence: list[Lesson]) -> list[SchedulesIssue]:
+def search_window_issues(lessons_sequence: list[Lesson]) -> list[SchedulesIssue]:
     issues_list = []
 
     prev_lesson = lessons_sequence[0]
@@ -53,7 +29,7 @@ def get_window_issues(lessons_sequence: list[Lesson]) -> list[SchedulesIssue]:
 
     return issues_list
 
-def get_jogging_issues(lessons_sequence: list[Lesson]) -> list[SchedulesIssue]:
+def search_jogging_issues(lessons_sequence: list[Lesson]) -> list[SchedulesIssue]:
     issues_list = []
 
     def has_big_distance(lesson1: Lesson, lesson2: Lesson) -> bool:
@@ -74,7 +50,7 @@ def get_jogging_issues(lessons_sequence: list[Lesson]) -> list[SchedulesIssue]:
 
     return issues_list
 
-def get_insomnia_issues(lessons_sequence: list[Lesson]) -> list[SchedulesIssue]:
+def search_insomnia_issues(lessons_sequence: list[Lesson]) -> list[SchedulesIssue]:
     issues_list = []
 
     prev_lesson = lessons_sequence[0]
@@ -115,7 +91,7 @@ async def main():
         )
     ]
 
-    issues_list = get_insomnia_issues(lessons_sequence)
+    issues_list = search_insomnia_issues(lessons_sequence)
     for issue in issues_list:
         print(issue.first_lesson.name)
         print(issue.first_lesson.start_time)
