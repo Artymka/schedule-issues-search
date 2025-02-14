@@ -33,13 +33,25 @@ def search_jogging_issues(lessons_sequence: list[Lesson]) -> list[SchedulesIssue
     issues_list = []
 
     def has_big_distance(lesson1: Lesson, lesson2: Lesson) -> bool:
+        if not lesson1.room or not lesson2.room: return False
+        sweet_pairs = [
+            ["Д", "И"],
+            ["ФОК", "И"],
+            ["Е", "И"],
+        ]
+
+        for pair in sweet_pairs:
+            if pair[0] in lesson1.room and \
+               pair[1] in lesson2.room or \
+               pair[1] in lesson1.room and \
+               pair[0] in lesson2.room:
+                return True
         return False
 
     prev_lesson = lessons_sequence[0]
     for curr_lesson in lessons_sequence[1:]:
-        # print(curr_lesson.start_time - prev_lesson.end_time)
-        if has_big_distance(prev_lesson, curr_lesson):
-            # print("Found issue")
+        if curr_lesson.start_time - prev_lesson.end_time == timedelta(minutes=10) and \
+           has_big_distance(prev_lesson, curr_lesson):
             issues_list.append(SchedulesIssue(
                 1,
                 prev_lesson,
@@ -79,19 +91,21 @@ async def main():
     lessons_sequence = [
         Lesson(
             "Py",
-            "loc",
+            "И-214",
             datetime(2025, 2, 1, 20, 0, 0, 0),
             datetime(2025, 2, 1, 21, 0, 0, 0)
         ),
         Lesson(
             "Pu",
-            "loc",
-            datetime(2025, 2, 2, 9, 0, 0, 0),
-            datetime(2025, 2, 2, 10, 0, 0, 0)
+            "ФОК-5",
+            datetime(2025, 2, 1, 21, 10, 0, 0),
+            datetime(2025, 2, 1, 23, 0, 0, 0)
         )
     ]
 
-    issues_list = search_insomnia_issues(lessons_sequence)
+    issues_list = search_jogging_issues(lessons_sequence)
+    print("***", len(issues_list) > 0)
+
     for issue in issues_list:
         print(issue.first_lesson.name)
         print(issue.first_lesson.start_time)
