@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Response
 import json
 
-from app.search_issues import search_insomnia_issues, \
+from .search_issues import search_insomnia_issues, \
                           search_jogging_issues, \
                           search_window_issues
 from utils.utils import get_search_json, \

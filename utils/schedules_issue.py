@@ -1,4 +1,4 @@
-from utils.lesson import Lesson
+from .lesson import Lesson
 
 
 class SchedulesIssue:

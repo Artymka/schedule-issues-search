@@ -3,7 +3,7 @@ import asyncio
 import icalendar
 from functools import cmp_to_key
 
-from utils.lesson import Lesson
+from .lesson import Lesson
 # from lesson import Lesson
 
 async def get_search_json(search_param: str) -> dict:
