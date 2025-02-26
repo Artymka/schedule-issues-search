@@ -5,19 +5,6 @@ from contextlib import contextmanager
 from asyncmixin import AsyncMixin
 
 
-@contextmanager
-def db_cursor():
-    conn = dbpool.getconn()
-    try:
-        with conn.cursor() as cur:
-            yield cur
-            conn.commit()
-    except:
-        conn.rollback()
-        raise
-    finally:
-        dbpool.putconn(conn)
-
 class DB(AsyncMixin):
     async def __ainit__(self, min_size, max_size, **connect_kwargs):
         self.pool = await asyncpg.pool.create_pool(min_size=min_size, max_size=max_size, **connect_kwargs)
@@ -30,6 +17,7 @@ class DB(AsyncMixin):
                     CREATE TABLE IF NOT EXISTS targets (
                         id INTEGER PRIMARY KEY,
                         title VARCHAR(120),
+                        short_title VARCHAR(120),
                         ical_link VARCHAR(100)
                     )
                 """)
@@ -69,15 +57,15 @@ class DB(AsyncMixin):
                 for target in targets:
                     await con.execute("""
                         INSERT INTO targets
-                        (id, title, ical_link)
-                        VALUES ($1, $2, $3)
+                        (id, title, short_title, ical_link)
+                        VALUES ($1, $2, $3, $4)
                     """,
-                    target["id"], target["title"], target["ical_link"])
+                    target["id"], target["title"], target["short_title"], target["ical_link"])
 
-    async def get_all_issues_with_descs(self):
+    async def get_all_issues(self):
         async with self.pool.acquire() as con:
             res = await con.fetch("""
-                SELECT target_id,
+                SELECT targets.title AS target_title,
                        first_lesson_dt,
                        second_lesson_dt,
                        first_lesson_title,
@@ -87,11 +75,13 @@ class DB(AsyncMixin):
                 FROM issues
                 LEFT JOIN issues_types
                 ON issues.type_id = issues_types_id
+                LEFT JOIN targets
+                ON target_id == targets.id
             """)
 
             return res
 
-    async def get_filtered_issues_with_desc(self, filter: str):
+    async def get_filtered_issues(self, search_filter: str):
         async with self.pool.acquire() as con:
             res = await con.fetch("""
                 SELECT first_lesson_dt,
@@ -105,23 +95,56 @@ class DB(AsyncMixin):
                 ON issues.type_id = issues_types_id
                 LEFT JOIN targets
                 ON issues.target_id = targets.id
-            """)
+                WHERE targets.title LIKE "%$1%"
+            """,
+            search_filter)
 
             return res
 
-    async def update_issues(self):
-        pass
+    async def update_issues(self, issues: list[dict]):
+        async with self.pool.acquire() as con:
+            async with con.transaction():
+                await con.execute("""
+                    TRUNCATE issues
+                """)
 
-    async def update_issues_types(self):
-        pass
+                for i in issues:
+                    await con.execute("""
+                        INSERT INTO issues
+                        (id, target_id, first_lesson_dt, second_lesson_dt, 
+                        first_lesson_title, second_lesson_title, type_id)
+                        VALUES ($1, $2, $3, $4)
+                    """,
+                    i["id"], i["target_id"], i["first_lesson_dt"], i["second_lesson_dt"],
+                    i["first_lesson_title"], i["second_lesson_title"], i["type_id"])
+
+    async def update_issues_types(self, issues_types):
+        async with self.pool.acquire() as con:
+            async with con.transaction():
+                await con.execute("""
+                    TRUNCATE issues_types
+                """)
+
+                for it in issues_types:
+                    await con.execute("""
+                        INSERT INTO issues_types
+                        (id, title)
+                        VALUES ($1, $2)
+                    """,
+                    it["id"], it["title"])
 
 async def main():
     db = await DB(min_size=1, max_size=10,
                   host="127.0.0.1",
-                  database="postgres",
+                  database="schedule_issues",
                   port=5432,
                   user="postgres",
                   password="root")
+
+    await db.update_issues_types([
+        {"id": 1, "title": "филоса"},
+        {"id": 2, "title": "кросис"},
+    ])
 
 if __name__ == "__main__":
     asyncio.run(main())
