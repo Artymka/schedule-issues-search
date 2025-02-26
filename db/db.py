@@ -2,8 +2,8 @@ import asyncpg
 import asyncio
 from contextlib import contextmanager
 
-from asyncmixin import AsyncMixin
-
+# from asyncmixin import AsyncMixin
+from db.asyncmixin import AsyncMixin
 
 class DB(AsyncMixin):
     async def __ainit__(self, min_size, max_size, **connect_kwargs):
@@ -15,7 +15,7 @@ class DB(AsyncMixin):
             async with con.transaction():
                 await con.execute("""
                     CREATE TABLE IF NOT EXISTS targets (
-                        id INTEGER PRIMARY KEY,
+                        id SERIAL PRIMARY KEY,
                         title VARCHAR(120),
                         short_title VARCHAR(120),
                         ical_link VARCHAR(100)
@@ -57,10 +57,10 @@ class DB(AsyncMixin):
                 for target in targets:
                     await con.execute("""
                         INSERT INTO targets
-                        (id, title, short_title, ical_link)
-                        VALUES ($1, $2, $3, $4)
+                        (title, short_title, ical_link)
+                        VALUES ($1, $2, $3)
                     """,
-                    target["id"], target["title"], target["short_title"], target["ical_link"])
+                    target["title"], target["short_title"], target["ical_link"])
 
     async def get_all_issues(self):
         async with self.pool.acquire() as con:
