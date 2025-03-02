@@ -1,7 +1,7 @@
 import aiohttp
 
 from db.db import DB
-from schedule import save_key_targets, \
+from schedule_data import save_key_targets, \
                      get_all_pages, \
                      get_calendar, \
                      get_lessons_sequence
