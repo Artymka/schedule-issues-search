@@ -5,11 +5,10 @@ from functools import cmp_to_key
 
 from utils.utils import get_search_json, get_calendar, get_lessons_sequence
 from utils.lesson import Lesson
-from utils.schedules_issue import SchedulesIssue
+from utils.schedule_issue import ScheduleIssue
 
 
-
-def search_window_issues(lessons_sequence: list[Lesson]) -> list[SchedulesIssue]:
+def search_window_issues(lessons_sequence: list[Lesson]) -> list[ScheduleIssue]:
     issues_list = []
 
     prev_lesson = lessons_sequence[0]
@@ -19,7 +18,7 @@ def search_window_issues(lessons_sequence: list[Lesson]) -> list[SchedulesIssue]
            < (curr_lesson.start_time - prev_lesson.end_time) \
            < timedelta(seconds=3600*9):
             # print("Found issue")
-            issues_list.append(SchedulesIssue(
+            issues_list.append(ScheduleIssue(
                 0,
                 prev_lesson,
                 curr_lesson
@@ -29,7 +28,7 @@ def search_window_issues(lessons_sequence: list[Lesson]) -> list[SchedulesIssue]
 
     return issues_list
 
-def search_jogging_issues(lessons_sequence: list[Lesson]) -> list[SchedulesIssue]:
+def search_jogging_issues(lessons_sequence: list[Lesson]) -> list[ScheduleIssue]:
     issues_list = []
 
     def has_big_distance(lesson1: Lesson, lesson2: Lesson) -> bool:
@@ -52,7 +51,7 @@ def search_jogging_issues(lessons_sequence: list[Lesson]) -> list[SchedulesIssue
     for curr_lesson in lessons_sequence[1:]:
         if curr_lesson.start_time - prev_lesson.end_time == timedelta(minutes=10) and \
            has_big_distance(prev_lesson, curr_lesson):
-            issues_list.append(SchedulesIssue(
+            issues_list.append(ScheduleIssue(
                 1,
                 prev_lesson,
                 curr_lesson
@@ -62,7 +61,7 @@ def search_jogging_issues(lessons_sequence: list[Lesson]) -> list[SchedulesIssue
 
     return issues_list
 
-def search_insomnia_issues(lessons_sequence: list[Lesson]) -> list[SchedulesIssue]:
+def search_insomnia_issues(lessons_sequence: list[Lesson]) -> list[ScheduleIssue]:
     issues_list = []
 
     prev_lesson = lessons_sequence[0]
@@ -71,7 +70,7 @@ def search_insomnia_issues(lessons_sequence: list[Lesson]) -> list[SchedulesIssu
         if prev_lesson.end_time.time() > time(hour=20) and \
            curr_lesson.start_time.time() < time(hour=10):
             # print("Found issue")
-            issues_list.append(SchedulesIssue(
+            issues_list.append(ScheduleIssue(
                 2,
                 prev_lesson,
                 curr_lesson
@@ -80,6 +79,13 @@ def search_insomnia_issues(lessons_sequence: list[Lesson]) -> list[SchedulesIssu
         prev_lesson = curr_lesson
 
     return issues_list
+
+def search_all_issues(lesson_sequence: list[Lesson]) -> list[ScheduleIssue]:
+    res = []
+    res += search_window_issues(lesson_sequence)
+    res += search_jogging_issues(lesson_sequence)
+    res += search_insomnia_issues(lesson_sequence)
+    return res
 
 
 async def main():

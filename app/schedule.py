@@ -9,12 +9,12 @@ from utils.target import Target
 from db.db import DB
 
 
-async def get_search_json(search_param: str) -> dict:
-    url = "https://schedule-of.mirea.ru/schedule/api/search"
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, params={"match": search_param, "limit": 1}) as response:
-            res = await response.json()
-            return res["data"][0]
+# async def get_search_json(search_param: str) -> dict:
+#     url = "https://schedule-of.mirea.ru/schedule/api/search"
+#     async with aiohttp.ClientSession() as session:
+#         async with session.get(url, params={"match": search_param, "limit": 1}) as response:
+#             res = await response.json()
+#             return res["data"][0]
 
 
 async def get_all_pages(session: aiohttp.ClientSession,
@@ -63,10 +63,8 @@ async def get_lessons_sequence(cal: icalendar.Calendar) -> list[Lesson]:
     lessons_sequence = []
 
     for event in cal.walk("VEVENT"):
-        # проверка на то, является ли event занятием
-        if not event.get("RRULE"): continue
-        # проверка на то, является ли пара дистанционной
-        if event.get("LOCATION") == "Дистанционно (СДО)": continue
+        if not event.get("RRULE") or \
+           event.get("LOCATION") == "Дистанционно (СДО)": continue
 
         lessons_sequence.append(Lesson(
             event.get("SUMMARY"),
