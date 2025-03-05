@@ -6,14 +6,3 @@ class Lesson:
         self.room = room
         self.start_time = start_time
         self.end_time = end_time
-
-    # def week_day(self):
-    #     week_days = [
-    #         "Понедельник",
-    #         # "Вторник",
-    #         # "Среда",
-    #         # "Четверг",
-    #         # "Пятница",
-    #         "Понедельник",
-    #         # "Понедельник",
-    #     ]

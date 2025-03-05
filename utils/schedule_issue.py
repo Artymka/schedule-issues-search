@@ -14,16 +14,6 @@ class ScheduleIssue:
         self.first_lesson = first_lesson
         self.second_lesson = second_lesson
 
-    # def formatted(self):
-    #     return {
-    #         "type_id": self.type_id,
-    #         "description": self.desc,
-    #         "first_lesson_title": self.first_lesson.name,
-    #         "second_lesson_title": self.second_lesson.name,
-    #         "date": self.first_lesson.start_time.strftime('%Y-%m-%d'),
-    #         "week_day": self.first_lesson.start_time.weekday(),
-    #     }
-
     def formatted(self):
         return {
             "target_id": self.target_id,

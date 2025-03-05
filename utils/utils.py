@@ -4,7 +4,7 @@ import icalendar
 from functools import cmp_to_key
 
 # from .lesson import Lesson
-from lesson import Lesson
+from .lesson import Lesson
 
 async def get_search_json(search_param: str) -> dict:
     url = "https://schedule-of.mirea.ru/schedule/api/search"

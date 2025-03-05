@@ -9,6 +9,7 @@ class DB(AsyncMixin):
     async def __ainit__(self, min_size, max_size, **connect_kwargs):
         self.pool = await asyncpg.pool.create_pool(min_size=min_size, max_size=max_size, **connect_kwargs)
         await self.create_tables()
+        await self.add_issues_types()
 
     async def create_tables(self):
         async with self.pool.acquire() as con:
@@ -23,7 +24,7 @@ class DB(AsyncMixin):
                 """)
                 await con.execute("""
                     CREATE TABLE IF NOT EXISTS issues_types (
-                        id SERIAL PRIMARY KEY,
+                        id INTEGER PRIMARY KEY,
                         title VARCHAR(120)
                     )
                 """)
@@ -38,6 +39,21 @@ class DB(AsyncMixin):
                         type_id INTEGER
                     )                
                 """)
+
+    async def add_issues_types(self):
+        descs = [
+            "Окно между парами.",
+            "Большое расстояние между аудиториями, короткая перемена.",
+            "Пары поздно заканчиваются, а на следующий день рано вставать.",
+        ]
+
+        async with self.pool.acquire() as con:
+            for i in range(len(descs)):
+                await con.execute("""
+                    INSERT INTO issues_types 
+                    (id, title) VALUES ($1, $2) 
+                    ON CONFLICT DO NOTHING
+                """, i, descs[i])
 
     async def get_all_targets(self):
         async with self.pool.acquire() as con:
@@ -74,9 +90,9 @@ class DB(AsyncMixin):
                        issues_types.title AS desc
                 FROM issues
                 LEFT JOIN issues_types
-                ON issues.type_id = issues_types_id
+                ON issues.type_id = issues_types.id
                 LEFT JOIN targets
-                ON target_id == targets.id
+                ON target_id = targets.id
             """)
 
             return res
@@ -92,12 +108,12 @@ class DB(AsyncMixin):
                        issues_types.title AS desc
                 FROM issues
                 LEFT JOIN issues_types
-                ON issues.type_id = issues_types_id
+                ON issues.type_id = issues_types.id
                 LEFT JOIN targets
                 ON issues.target_id = targets.id
-                WHERE targets.title LIKE "%$1%"
+                WHERE targets.title LIKE $1
             """,
-            search_filter)
+            '"%' + search_filter + '%"')
 
             return res
 
@@ -111,11 +127,11 @@ class DB(AsyncMixin):
                 for i in issues:
                     await con.execute("""
                         INSERT INTO issues
-                        (id, target_id, first_lesson_dt, second_lesson_dt, 
+                        (target_id, first_lesson_dt, second_lesson_dt, 
                         first_lesson_title, second_lesson_title, type_id)
-                        VALUES ($1, $2, $3, $4)
+                        VALUES ($1, $2, $3, $4, $5, $6)
                     """,
-                    i["id"], i["target_id"], i["first_lesson_dt"], i["second_lesson_dt"],
+                    i["target_id"], i["first_lesson_dt"], i["second_lesson_dt"],
                     i["first_lesson_title"], i["second_lesson_title"], i["type_id"])
 
     async def update_issues_types(self, issues_types):
